@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"errors"
 	"log"
+	"fmt"
 	"golang.org/x/net/html"
 )
 
@@ -22,55 +23,67 @@ type Selection struct {
 }
 
 func main() {
-	http.HandleFunc("/test", someFunc)
-	http.ListenAndServe(":8080", nil)
-}
+//	http.HandleFunc("/test", someFunc)
+//	http.ListenAndServe(":8080", nil)
 
-func someFunc(w http.ResponseWriter, r *http.Request) {
 	doc, err := NewDocument("http://willfe.com/2013/10/2/great-x3-albion-prelude-add-list/")
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	doc.ParseToken()
-	//	res, e := http.Get("http://golang-examples.tumblr.com/post/47426518779/parse-html")
-	//	if e != nil {
-	//		log.Fatalln(e)
-	//	}
-	//
-	//	tkz := html.NewTokenizer(res.Body)
-	//
-	//	for {
-	//		tokenType := tkz.Next()
-	//		if tokenType == html.ErrorToken {
-	//			w.Write([]byte(tokenType.String()))
-	//			log.Fatalln(tokenType.String())
-	//		}
-	//		token := tkz.Token()
-	//		switch tokenType {
-	//		case html.StartTagToken:
-	//			for _, a := range token.Attr {
-	//				if a.Key == "href" && token.Data != "" {
-	//					log.Println(a.Val)
-	//					break
-	//				}
-	//			}
-	//		}
-	//	}
-	//parseNode(doc.rootNode)
-	//var buf bytes.Buffer
-	//buf.WriteString(doc.tkz.Text())
-	//tt := doc.tkz.Next()
-	//w.Write([]byte(tt.String()))
+
+	parseNode(doc.rootNode)
 }
 
-func (t *Document) ParseToken() {
+/*
+
+func someFunc(w http.ResponseWriter, r *http.Request) {
+
+
+	res, e := http.Get("http://golang-examples.tumblr.com/post/47426518779/parse-html")
+	if e != nil {
+		log.Fatalln(e)
+	}
+
+	tkz := html.NewTokenizer(res.Body)
+
 	for {
-		tkz := t.tokenizer
 		tokenType := tkz.Next()
+		if tokenType == html.ErrorToken {
+			w.Write([]byte(tokenType.String()))
+			log.Fatalln(tokenType.String())
+		}
+		token := tkz.Token()
+		switch tokenType {
+		case html.StartTagToken:
+			for _, a := range token.Attr {
+				if a.Key == "href" && token.Data != "" {
+					log.Println(a.Val)
+					break
+				}
+			}
+		case html.TextToken:
+			for _, a := range token.Attr {
+				log.Println("Text Tocken: " + a.Key + " " + a.Val)
+			}
+		}
+	}
+	//	var buf bytes.Buffer
+	//	buf.WriteString(doc.tkz.Text())
+	//	tt := doc.tkz.Next()
+	//	w.Write([]byte(tt.String()))
+}
+*/
+
+func (d *Document) ParseToken() {
+	fmt.Println(d)
+	for {
+		tokenType := d.tokenizer.Next()
 		if tokenType == html.ErrorToken {
 			log.Fatalln("Something wrong!")
 		}
-		token := tkz.Token()
+		token := d.tokenizer.Token()
 		switch tokenType {
 		case html.StartTagToken:
 			for _, a := range token.Attr {
@@ -106,7 +119,6 @@ func parseNode(n *html.Node) {
 }
 
 func NewDocument(url string) (*Document, error) {
-	// Load the URL
 	res, e := http.Get(url)
 	if e != nil {
 		return nil, e
@@ -118,22 +130,17 @@ func NewDocumentFromResponse(res *http.Response) (*Document, error) {
 	if res == nil {
 		return nil, errors.New("Response is nil pointer")
 	}
-
-	defer res.Body.Close()
-
 	// Parse the HTML into nodes
 	root, e := html.Parse(res.Body)
 	tkz := html.NewTokenizer(res.Body)
 	if e != nil {
 		return nil, e
 	}
-
-	// Create and fill the document
+	defer res.Body.Close()
 	return newDocument(root, tkz, res.Request.URL), nil
 }
 
 func newDocument(root *html.Node, tokenizer *html.Tokenizer, url *url.URL) *Document {
-	// Create and fill the document
 	d := &Document{nil, url, root, tokenizer}
 	d.Selection = newSingleSelection(root, d)
 	return d
